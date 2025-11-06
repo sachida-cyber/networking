@@ -1,85 +1,67 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Networking A–Z Tree Map</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cyber Map — Interactive Treemap</title>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- D3.js (v7) -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-  <header>
-    <h1>Networking A–Z Visual Tree Map</h1>
-    <input type="text" id="search" placeholder="🔍 Search topics...">
+  <header class="site-header">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect rx="8" width="48" height="48" fill="#0ea5a4"></rect>
+        <text x="50%" y="54%" font-size="18" font-family="Segoe UI, Arial" fill="white" text-anchor="middle" dominant-baseline="middle">CM</text>
+      </svg>
+      <div class="titles">
+        <div class="sitename">Cyber Map</div>
+        <div class="subtitle">Treemap explorer — OSINT-style</div>
+      </div>
+    </div>
+
+    <div class="top-controls">
+      <input id="search" placeholder="Search topics (press Enter)" aria-label="Search topics" />
+      <button id="resetView" title="Reset zoom & focus">Reset</button>
+    </div>
   </header>
 
-  <!-- Tree visualization -->
-  <div id="tree-container"></div>
+  <main>
+    <section class="hero">
+      <h1>Interactive Treemap</h1>
+      <p>Explore categories visually. Click a box to focus, double-click to open details. Use mouse wheel + drag to zoom & pan.</p>
+    </section>
 
-  <!-- Popup modal -->
-  <div id="popup" class="popup hidden">
-    <div class="popup-content">
-      <button id="close-popup">✕</button>
-      <h2 id="node-title"></h2>
-      <p id="node-summary"></p>
-      <div id="node-details"></div>
+    <section id="vis" class="vis" tabindex="0" aria-label="Treemap visualization"></section>
+  </main>
+
+  <!-- Modal for details -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content" role="document">
+      <button id="modalClose" class="modal-close" aria-label="Close">✕</button>
+      <h2 id="modalTitle"></h2>
+      <p id="modalDesc"></p>
+      <div id="modalLinks"></div>
     </div>
   </div>
-<div class="popup" role="dialog" aria-modal="true" id="popup">
-  <header class="popup-header">
-    <h2 id="node-title">Layer 3 — Network Layer</h2>
-    <button class="close-btn" aria-label="Close">✕</button>
-  </header>
 
-  <nav class="popup-tabs">
-    <button data-tab="overview" class="active">Overview</button>
-    <button data-tab="diagram">Diagram</button>
-    <button data-tab="commands">Commands / Examples</button>
-    <button data-tab="tools">Tools</button>
-    <button data-tab="labs">Lab</button>
-    <button data-tab="quiz">Quiz</button>
-    <button data-tab="refs">Further Reading</button>
-  </nav>
-
-  <section class="popup-body">
-    <article data-panel="overview" class="panel active">
-      <p id="short-summary"></p>
-      <div id="long-desc"></div>
-      <p><strong>Difficulty:</strong> <span id="difficulty"></span></p>
-      <p><strong>Prereqs:</strong> <span id="prereqs"></span></p>
-    </article>
-
-    <article data-panel="diagram" class="panel">
-      <div id="diagram-area"></div>
-    </article>
-
-    <article data-panel="commands" class="panel">
-      <pre id="commands-area"></pre>
-    </article>
-
-    <article data-panel="tools" class="panel">
-      <ul id="tools-list"></ul>
-    </article>
-
-    <article data-panel="labs" class="panel">
-      <ol id="labs-list"></ol>
-    </article>
-
-    <article data-panel="quiz" class="panel">
-      <div id="quiz-area"></div>
-    </article>
-
-    <article data-panel="refs" class="panel">
-      <ul id="refs-list"></ul>
-    </article>
-  </section>
-
-  <footer class="popup-footer">
-    <button id="bookmark">Bookmark</button>
-    <button id="mark-complete">Mark Complete</button>
+  <footer class="site-footer">
+    <div class="about">
+      <h3>About</h3>
+      <p>Cyber Map is a visual treemap demo inspired by OSINT Framework — intended for learning and navigation. Replace data.js with your own dataset to customize.</p>
+    </div>
+    <div class="qr">
+      <h3>Scan</h3>
+      <img id="qrImg" alt="QR code" src="https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=https://oncallbookings.com/" />
+    </div>
   </footer>
-</div>
 
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- Data + Script -->
+  <script src="data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
