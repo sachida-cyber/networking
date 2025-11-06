@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Networking A–Z Tree Map</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Networking A–Z Visual Tree Map</h1>
+    <input type="text" id="search" placeholder="🔍 Search topics...">
+  </header>
+
+  <!-- Tree visualization -->
+  <div id="tree-container"></div>
+
+  <!-- Popup modal -->
+  <div id="popup" class="popup hidden">
+    <div class="popup-content">
+      <button id="close-popup">✕</button>
+      <h2 id="node-title"></h2>
+      <p id="node-summary"></p>
+      <div id="node-details"></div>
+    </div>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
