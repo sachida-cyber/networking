@@ -1,453 +1,137 @@
-// Load the tree data
-d3.json("data.json").then(data => {
-  const width = window.innerWidth;
-  const height = window.innerHeight - 100;
+// script.js - builds treemap using d3, provides zoom/pan, search and modal details
 
-  const svg = d3.select("#tree-container")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .append("g")
-    .attr("transform", "translate(50,50)");
-
-  const treeLayout = d3.tree().size([height - 100, width - 300]);
-  const root = d3.hierarchy(data);
-  treeLayout(root);
-
-  // Draw links
-  svg.selectAll("path")
-    .data(root.links())
-    .enter()
-    .append("path")
-    .attr("d", d3.linkHorizontal()
-      .x(d => d.y)
-      .y(d => d.x))
-    .attr("stroke", "#00ffa2")
-    .attr("fill", "none");
-
-  // Draw nodes
-  const nodes = svg.selectAll("circle")
-    .data(root.descendants())
-    .enter()
-    .append("circle")
-    .attr("cx", d => d.y)
-    .attr("cy", d => d.x)
-    .attr("r", 6)
-    .attr("fill", d => d.data.color || "#00f5ff")
-    .style("cursor", "pointer")
-    .on("click", (event, d) => showPopup(d.data));
-
-  // Add text labels
-  svg.selectAll("text")
-    .data(root.descendants())
-    .enter()
-    .append("text")
-    .attr("x", d => d.y + 10)
-    .attr("y", d => d.x + 4)
-    .text(d => d.data.name)
-    .style("font-size", "12px")
-    .style("fill", "#fff");
-});
-
-// Popup logic
-function showPopup(node) {
-  document.getElementById("node-title").textContent = node.name;
-  document.getElementById("node-summary").textContent = node.shortSummary || "No summary available.";
-  document.getElementById("node-details").innerHTML = node.longDescription || "";
-  document.getElementById("popup").classList.remove("hidden");
+// compute width/height from container
+function getVisSize(){
+  const el = document.querySelector('.vis');
+  return { width: Math.max(300, el.clientWidth), height: Math.max(200, el.clientHeight) };
 }
 
-document.getElementById("close-popup").addEventListener("click", () => {
-  document.getElementById("popup").classList.add("hidden");
-});
-{
-  "name": "Networking A-Z Master Map",
-  "meta": {
-    "version": "1.0",
-    "lastUpdated": "2025-11-06",
-    "author": "OSNIT-Style Generator"
-  },
-  "children": [
-    {
-      "name": "Foundations",
-      "color": "#4DA1FF",
-      "children": [
-        {
-          "name": "What is a Network",
-          "shortSummary": "Definition, purpose, real-world examples.",
-          "difficulty": "Beginner",
-          "prereqs": [],
-          "longDescription": "A network is connected systems that exchange information; covers goals like resource sharing, resilience, scalability."
-        },
-        {
-          "name": "Network Types",
-          "children": [
-            {"name": "LAN", "shortSummary": "Local Area Network"},
-            {"name": "WAN", "shortSummary": "Wide Area Network"},
-            {"name": "MAN", "shortSummary": "Metropolitan Area Network"},
-            {"name": "PAN", "shortSummary": "Personal Area Network"},
-            {"name": "CAN", "shortSummary": "Campus Area Network"},
-            {"name": "SAN", "shortSummary": "Storage Area Network"}
-          ]
-        },
-        {
-          "name": "Topologies",
-          "children": [
-            {"name": "Bus"},
-            {"name": "Star"},
-            {"name": "Ring"},
-            {"name": "Mesh"},
-            {"name": "Hybrid"}
-          ]
-        },
-        {"name": "Network Models", "children": [
-          {"name": "OSI Model", "shortSummary": "7-layer conceptual model"},
-          {"name": "TCP/IP Model", "shortSummary": "4-layer practical model"}
-        ]}
-      ]
-    },
+let { width, height } = getVisSize();
 
-    {
-      "name": "Physical Layer & Media",
-      "color": "#00d1b2",
-      "children": [
-        {"name": "Guided Media", "children": [
-          {"name": "Unshielded Twisted Pair (UTP)", "shortSummary": "Cat5e/6/6a/7"},
-          {"name": "Shielded Twisted Pair (STP)"},
-          {"name": "Coaxial Cable"},
-          {"name": "Fiber Optic", "children": [
-            {"name": "Single-mode (SMF)"},
-            {"name": "Multi-mode (MMF)"},
-            {"name": "DWDM & Dense Wavelength Multiplexing"}
-          ]}
-        ]},
-        {"name": "Unguided Media", "children": [
-          {"name": "Radio (RF)"},
-          {"name": "Microwave"},
-          {"name": "Satellite"},
-          {"name": "Infrared"}
-        ]},
-        {"name": "Physical Layer Standards", "children": [
-          {"name": "Ethernet (IEEE 802.3)", "shortSummary": "802.3 family"},
-          {"name": "Wi-Fi (IEEE 802.11)"},
-          {"name": "Bluetooth (IEEE 802.15.1)"},
-          {"name": "Zigbee / Thread"}
-        ]},
-        {"name": "Cabling Practices & Termination", "shortSummary": "Crimping, testing, color codes"}
-      ]
-    },
+// Create svg container
+const svg = d3.select('#vis').append('svg')
+  .attr('width', '100%')
+  .attr('height', '100%')
+  .attr('viewBox', `0 0 ${width} ${height}`)
+  .style('cursor', 'grab');
 
-    {
-      "name": "Data Link Layer",
-      "color": "#ff9f1c",
-      "children": [
-        {"name": "MAC Addresses", "shortSummary": "48-bit addresses, vendor OUI"},
-        {"name": "Ethernet Frames", "shortSummary": "Frame structure, FCS"},
-        {"name": "Switching Concepts", "children": [
-          {"name": "Layer 2 Switch", "shortSummary": "MAC learning, CAM table"},
-          {"name": "Store-and-Forward vs Cut-Through"},
-          {"name": "VLANs", "children": [
-            {"name": "Access vs Trunk Ports"},
-            {"name": "802.1Q Tagging"},
-            {"name": "VLAN Design Best Practices"},
-            {"name": "VLAN Security (VTP, PVLANs)"}
-          ]},
-          {"name": "Spanning Tree Protocol (STP)", "children": [
-            {"name": "STP Basics"},
-            {"name": "RSTP"},
-            {"name": "MSTP"},
-            {"name": "Root Bridge Election & Timers"}
-          ]}
-        ]},
-        {"name": "Link Aggregation (LACP)"},
-        {"name": "Error Detection & Flow Control"}
-      ]
-    },
+const g = svg.append('g');
 
-    {
-      "name": "Network Layer (Layer 3)",
-      "color": "#a14dff",
-      "children": [
-        {
-          "name": "IP Addressing",
-          "children": [
-            {"name": "IPv4", "children": [
-              {"name": "IPv4 Structure", "shortSummary": "32-bit address"},
-              {"name": "Subnetting & CIDR"},
-              {"name": "Private vs Public Addressing"},
-              {"name": "Address Resolution Protocol (ARP)"}
-            ]},
-            {"name": "IPv6", "children": [
-              {"name": "IPv6 Address Types (Unicast/Multicast/Anycast)"},
-              {"name": "IPv6 Notation & Prefixes"},
-              {"name": "Neighbor Discovery (NDP)"},
-              {"name": "Transition Mechanisms (6to4, NAT64, Dual-Stack)"}
-            ]}
-          ]
-        },
-        {
-          "name": "Routing",
-          "children": [
-            {"name": "Routing Basics", "shortSummary": "Forwarding, routing table"},
-            {"name": "Static Routing"},
-            {"name": "Dynamic Routing", "children": [
-              {"name": "Distance Vector (RIP)"},
-              {"name": "Link State (OSPF)", "children": [
-                {"name": "Areas, LSAs, SPF algorithm"}
-              ]},
-              {"name": "EIGRP"},
-              {"name": "Path-Vector (BGP)", "children": [
-                {"name": "BGP Fundamentals"},
-                {"name": "Attributes (AS_PATH, MED, LOCAL_PREF)"},
-                {"name": "iBGP vs eBGP"},
-                {"name": "BGP Route Filtering & Best Practices"}
-              ]}
-            ]},
-            {"name": "Advanced Routing", "children": [
-              {"name": "Route Redistribution"},
-              {"name": "Policy-Based Routing (PBR)"},
-              {"name": "Multicast Routing (PIM)"},
-              {"name": "MPLS & TE (Traffic Engineering)"},
-              {"name": "Segment Routing"}
-            ]}
-          ]
-        },
-        {"name": "NAT & PAT", "shortSummary": "Address translation and port address translation"},
-        {"name": "ICMP", "shortSummary": "Ping, unreachable messages, TTL"},
-        {"name": "Routing Protocol Architecture & Convergence"}
-      ]
-    },
+// Color scale - categorical
+const color = d3.scaleOrdinal(d3.schemeTableau10);
 
-    {
-      "name": "Transport Layer",
-      "color": "#ff4d6d",
-      "children": [
-        {"name": "TCP", "children": [
-          {"name": "Three-way handshake"},
-          {"name": "Sequence & Acknowledgement numbers"},
-          {"name": "Flow & Congestion control (Slow Start, AIMD)"},
-          {"name": "TCP Options (Window scaling, SACK)"},
-          {"name": "TCP Tuning & Performance"}
-        ]},
-        {"name": "UDP", "shortSummary": "Connectionless, low-overhead"},
-        {"name": "QUIC", "shortSummary": "UDP-based transport with TLS integrated"},
-        {"name": "Transport Layer Security (TLS)", "children": [
-          {"name": "TLS Handshake & Cipher Suites"},
-          {"name": "PKI Basics & Certificate Chains"}
-        ]}
-      ]
-    },
+// Create root from data: sum values (leaf nodes) and sort
+const root = d3.hierarchy(data).sum(d => d.value ? d.value : 0).sort((a,b) => b.value - a.value);
 
-    {
-      "name": "Application Layer & Protocols",
-      "color": "#ffd166",
-      "children": [
-        {"name": "HTTP / HTTPS", "children": [
-          {"name": "HTTP Methods & Status Codes"},
-          {"name": "REST vs GraphQL"},
-          {"name": "WebSockets"}
-        ]},
-        {"name": "DNS", "children": [
-          {"name": "DNS Resolution Process"},
-          {"name": "Zones, Records (A, AAAA, CNAME, MX, TXT)"},
-          {"name": "DNSSEC"},
-          {"name": "Recursive vs Authoritative Servers"}
-        ]},
-        {"name": "DHCP", "shortSummary": "IP lease process"},
-        {"name": "FTP, SFTP, SCP"},
-        {"name": "Email Protocols (SMTP, IMAP, POP3)"},
-        {"name": "SNMP", "shortSummary": "Monitoring & management"},
-        {"name": "NTP", "shortSummary": "Time synchronization"}
-      ]
-    },
+// Treemap layout
+d3.treemap().size([width, height]).paddingInner(6)(root);
 
-    {
-      "name": "Wireless & Mobile Networks",
-      "color": "#00b4d8",
-      "children": [
-        {"name": "Wi-Fi", "children": [
-          {"name": "802.11 Standards (a/b/g/n/ac/ax/be)"},
-          {"name": "Channels, DFS, 2.4GHz vs 5GHz vs 6GHz"},
-          {"name": "Security (WEP, WPA, WPA2, WPA3)"},
-          {"name": "Enterprise Authentication (802.1X, RADIUS, EAP)"}
-        ]},
-        {"name": "Cellular Networks", "children": [
-          {"name": "GSM / CDMA"},
-          {"name": "3G / 4G LTE"},
-          {"name": "5G (NR)", "children": [
-            {"name": "RAN, Core (5GC), Slicing, URLLC, mMTC"}
-          ]}
-        ]},
-        {"name": "IoT Networking", "children": [
-          {"name": "LoRaWAN"},
-          {"name": "NB-IoT"},
-          {"name": "BLE (Bluetooth Low Energy)"},
-          {"name": "MQTT, CoAP"}
-        ]}
-      ]
-    },
+// Draw nodes
+const nodes = g.selectAll('g.node').data(root.descendants()).enter().append('g')
+  .attr('class','node')
+  .attr('transform', d => `translate(${d.x0},${d.y0})`)
+  .on('dblclick', (e,d)=> openModal(d.data))
+  .on('click', (e,d)=> focusOn(d));
 
-    {
-      "name": "Network Security",
-      "color": "#ff3d00",
-      "children": [
-        {"name": "Security Fundamentals", "children": [
-          {"name": "CIA Triad"},
-          {"name": "Zero Trust"}
-        ]},
-        {"name": "Firewalls", "children": [
-          {"name": "Packet Filtering"},
-          {"name": "Stateful Firewalls"},
-          {"name": "Next-Gen Firewalls (NGFW)"}
-        ]},
-        {"name": "VPNs", "children": [
-          {"name": "IPsec", "shortSummary": "Site-to-site & remote access"},
-          {"name": "SSL/TLS VPN"},
-          {"name": "WireGuard"}
-        ]},
-        {"name": "IDS / IPS", "shortSummary": "Signature & anomaly detection"},
-        {"name": "DDoS Protection & Mitigation"},
-        {"name": "Network Hardening & Best Practices"},
-        {"name": "PKI & Certificate Management"},
-        {"name": "Secure Network Design Patterns"}
-      ]
-    },
+nodes.append('rect')
+  .attr('width', d => Math.max(0, d.x1 - d.x0))
+  .attr('height', d => Math.max(0, d.y1 - d.y0))
+  .attr('rx', 8)
+  .attr('ry', 8)
+  .style('fill', d => d.depth === 0 ? '#071425' : color(d.parent ? d.parent.data.name : d.data.name))
+  .style('mix-blend-mode','screen');
 
-    {
-      "name": "Monitoring, Observability & Telemetry",
-      "color": "#8ac926",
-      "children": [
-        {"name": "Packet Capture & Analysis", "children": [
-          {"name": "Wireshark", "shortSummary": "Capture filters & display filters"},
-          {"name": "tcpdump"}
-        ]},
-        {"name": "Flow Protocols", "children": [
-          {"name": "NetFlow/IPFIX"},
-          {"name": "sFlow"}
-        ]},
-        {"name": "SNMP", "shortSummary": "MIBs & OIDs"},
-        {"name": "Modern Telemetry", "children": [
-          {"name": "gNMI / gRPC"},
-          {"name": "Streaming Telemetry"}
-        ]},
-        {"name": "Logging & SIEM", "shortSummary": "Splunk, ELK, Graylog"},
-        {"name": "Metrics & Alerting", "children": [
-          {"name": "Prometheus"},
-          {"name": "Grafana"}
-        ]}
-      ]
-    },
+nodes.append('foreignObject')
+  .attr('width', d => Math.max(0, d.x1 - d.x0) - 8)
+  .attr('height', d => Math.max(0, d.y1 - d.y0) - 8)
+  .attr('x',4).attr('y',4)
+  .append('xhtml:div')
+  .attr('class','node-content')
+  .style('width','100%').style('height','100%')
+  .html(d => `<div class="label">${d.data.name}</div><div class="value">${d.value ? d.value : ''}</div>`);
 
-    {
-      "name": "Advanced & Emerging Topics",
-      "color": "#6a4c93",
-      "children": [
-        {"name": "Software-Defined Networking (SDN)", "children": [
-          {"name": "Control Plane vs Data Plane"},
-          {"name": "OpenFlow"},
-          {"name": "ONOS, OpenDaylight"}
-        ]},
-        {"name": "Network Functions Virtualization (NFV)"},
-        {"name": "Intent-Based Networking"},
-        {"name": "Programmability & Automation", "children": [
-          {"name": "NETCONF / RESTCONF"},
-          {"name": "Ansible for Networking"},
-          {"name": "Python (Netmiko, NAPALM, Paramiko, Scapy)"},
-          {"name": "Automation Patterns & CI/CD"}
-        ]},
-        {"name": "Container & Cloud Networking", "children": [
-          {"name": "CNI Plugins (Calico, Flannel)"},
-          {"name": "Kubernetes Networking Model"},
-          {"name": "Service Mesh (Istio, Linkerd)"},
-          {"name": "Cloud VPCs, Peering, Transit Gateways"}
-        ]},
-        {"name": "Overlay Tunnels", "children": [
-          {"name": "VXLAN"},
-          {"name": "GRE"},
-          {"name": "IPsec Tunnels"}
-        ]},
-        {"name": "Edge & CDN Networking", "children": [
-          {"name": "Load Balancers (L4/L7)"},
-          {"name": "Anycast & GeoDNS"},
-          {"name": "CDN Architecture"}
-        ]}
-      ]
-    },
+// Zoom and pan with d3 zoom
+const zoom = d3.zoom()
+  .scaleExtent([0.6, 4])
+  .on('zoom', (event) => g.attr('transform', event.transform));
 
-    {
-      "name": "Tools & Labs",
-      "color": "#f72585",
-      "children": [
-        {"name": "Packet Tracer & GNS3"},
-        {"name": "EVE-NG"},
-        {"name": "Mininet"},
-        {"name": "Wireshark"},
-        {"name": "Nmap"},
-        {"name": "iperf / iperf3"},
-        {"name": "netcat (nc)"},
-        {"name": "tcpdump"},
-        {"name": "BGP Looking Glass & Route Servers"},
-        {"name": "Cloud Labs (AWS, Azure, GCP)"},
-        {"name": "Home Lab Hardware (routers, switches, cheap firewalls)"}
-      ]
-    },
+svg.call(zoom);
 
-    {
-      "name": "Troubleshooting & Methodologies",
-      "color": "#ffb703",
-      "children": [
-        {"name": "Troubleshooting Process", "children": [
-          {"name": "Identify -> Isolate -> Fix -> Verify"},
-          {"name": "Common Tools (ping/traceroute/nslookup/netstat)"},
-          {"name": "Common Symptoms & Root Causes"}
-        ]},
-        {"name": "Performance Tuning", "children": [
-          {"name": "Bufferbloat"},
-          {"name": "QoS & DiffServ"},
-          {"name": "WAN Optimization"}
-        ]},
-        {"name": "Network Documentation & Diagrams"}
-      ]
-    },
-
-    {
-      "name": "Career, Certifications & Learning Path",
-      "color": "#00a6fb",
-      "children": [
-        {"name": "Beginner Roadmap", "children": [
-          {"name": "Networking Basics -> Subnetting -> Ethernet -> CLI basics -> Wireshark"}
-        ]},
-        {"name": "Certifications", "children": [
-          {"name": "CompTIA Network+"},
-          {"name": "Cisco CCNA / CCNP"},
-          {"name": "Juniper JNCIA / JNCIS"},
-          {"name": "Cloud Certifications (AWS Certified Advanced Networking)"}
-        ]},
-        {"name": "Specializations", "children": [
-          {"name": "Security (Network+ -> CISSP?)"},
-          {"name": "Cloud Networking"},
-          {"name": "Datacenter Networking"},
-          {"name": "Wireless / RF Engineering"}
-        ]},
-        {"name": "Interview & Resume Tips", "shortSummary": "How to present networking skills"}
-      ]
-    },
-
-    {
-      "name": "Appendices & Utilities",
-      "color": "#b4f8c8",
-      "children": [
-        {"name": "Subnet Calculator"},
-        {"name": "Command Cheat Sheets", "children": [
-          {"name": "Cisco IOS Basics"},
-          {"name": "Juniper Junos"},
-          {"name": "Linux Networking Commands"}
-        ]},
-        {"name": "Common Ports & Protocols List"},
-        {"name": "Glossary A-Z"},
-        {"name": "Recommended Books & Courses"},
-        {"name": "Projects & Capstone Ideas"}
-      ]
-    }
-  ]
+// Focus on node: center & zoom to fit
+function focusOn(d){
+  // If leaf with zero size, do nothing
+  const dx = Math.max(1, d.x1 - d.x0);
+  const dy = Math.max(1, d.y1 - d.y0);
+  const kx = width / dx;
+  const ky = height / dy;
+  const k = Math.min(kx, ky) * 0.85;
+  const tx = - (d.x0 + d.x1)/2 * k + width/2;
+  const ty = - (d.y0 + d.y1)/2 * k + height/2;
+  svg.transition().duration(650).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(k));
 }
+
+// Reset view button
+document.getElementById('resetView').addEventListener('click', ()=> {
+  svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
+});
+
+// Search: find first matching node and focus
+document.getElementById('search').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    const q = e.target.value.trim().toLowerCase();
+    if(!q) return;
+    const match = root.descendants().find(n => n.data.name && n.data.name.toLowerCase().includes(q));
+    if(match) focusOn(match);
+  }
+});
+
+// Modal behavior
+const modal = document.getElementById('modal');
+const modalTitle = document.getElementById('modalTitle');
+const modalDesc = document.getElementById('modalDesc');
+const modalLinks = document.getElementById('modalLinks');
+const modalClose = document.getElementById('modalClose');
+
+function openModal(d){
+  if(!d) return;
+  modalTitle.textContent = d.name || d.title || 'Details';
+  modalDesc.textContent = d.desc || d.description || 'No description provided.';
+  modalLinks.innerHTML = '';
+  if(d.links && d.links.length){
+    const ul = document.createElement('ul');
+    d.links.forEach(l => {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="${l}" target="_blank" rel="noopener">${l}</a>`;
+      ul.appendChild(li);
+    });
+    modalLinks.appendChild(ul);
+  }
+  modal.setAttribute('aria-hidden','false');
+}
+modalClose.addEventListener('click', ()=> modal.setAttribute('aria-hidden','true'));
+
+// Double-click background to reset
+svg.on('dblclick', () => svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity));
+
+// Responsive: update viewBox and treemap on resize
+window.addEventListener('resize', ()=> {
+  const size = getVisSize();
+  width = size.width; height = size.height;
+  svg.attr('viewBox', `0 0 ${width} ${height}`);
+  // recompute layout and positions
+  d3.treemap().size([width, height]).paddingInner(6)(root);
+  nodes.data(root.descendants())
+    .attr('transform', d => `translate(${d.x0},${d.y0})`)
+    .select('rect')
+      .attr('width', d => Math.max(0, d.x1 - d.x0))
+      .attr('height', d => Math.max(0, d.y1 - d.y0));
+  nodes.select('foreignObject')
+      .attr('width', d => Math.max(0, d.x1 - d.x0) - 8)
+      .attr('height', d => Math.max(0, d.y1 - d.y0) - 8);
+});
+
+// Accessibility shortcuts
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') modal.setAttribute('aria-hidden','true');
+  if(e.key === 'f') document.getElementById('search').focus();
+});
